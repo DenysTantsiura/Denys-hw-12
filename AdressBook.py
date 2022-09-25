@@ -1,51 +1,33 @@
 """Task 12...
+Add the functionality of saving the address book to disk and restoring it from disk. 
+To do this, you can choose any data serialization/deserialization protocol that is convenient 
+for you and implement methods that will save all data to a file and load it from a file.
+File: "ABook.bdata"
+
+Add the ability to search the contents of the contact book to the user, so that all 
+information about one or more users can be found by a few digits of the phone number 
+or letters of the name, etc.
+Command:
+find ...
+(where ... is a string(s) query? for examples: 
+find 063
+find 044 e_7 Dou 1988)
 """
 
 from collections import UserDict
 from datetime import datetime, timedelta
 import os
 import pickle
-import random
 import re
 
 
-# ------------------------------------------------------------------------ 1
-def my_generator_names(quantity_limit: int) -> str:
-    """Simplest generator Names (example: Name_0, Name_1, ...) in limited quantities
-    incoming: quantity_limit (int)
-    return: yield next name
-    """
-    counter = 0
-    while counter < quantity_limit:
-        yield f"Name_{counter}"
-        counter += 1
-
-
-# ------------------------------------------------------------------------- 2
-def my_generator_phones(quantity_limit: int) -> str:
-    """Simplest generator Phones (example: +38(063)0000000, +38(063)0000001,...) in limited quantities
-    incoming: quantity_limit (int)
-    return: yield next phone
-    """
-    counter = 0
-    while counter < quantity_limit:
-        yield "+38(063){:07}".format(counter)
-        counter += 1
-
-
-# -------------------------------------------------------------------------- 4
 def helper_try_open_file(path_file: str) -> str:
     '''Checks if the database file exists and checks if the filename is free if not
     incoming: path_file is name of file
     return: name of file'''
-    # stored_dict = AddressBook()
     if os.path.isdir(path_file):
         while os.path.isdir(path_file):
             path_file = "new_one_" + path_file
-
-    # if not os.path.isfile(path_file):
-    #     with open(path_file, "ab") as words_file:
-    #         pickle.dump(stored_dict, words_file)
 
     return path_file
 
@@ -54,11 +36,9 @@ class AddressBook(UserDict):
 
     def add_record(self, record):
         self.data[record.name.value] = record
-        # self.COUNTER_OF_RECORDS += 1
 
     def iterator(self, N_count: int):
-        # self.MAX_LIMIT = N_count
-        # self.current_value = 0
+
         current_value = 0
         dictionary_iterator = iter(self.data)
         while current_value < len(self.data):
@@ -75,7 +55,7 @@ class AddressBook(UserDict):
         return f"AddressBook(Records:{self.data})"
 
 
-class Field:  # super for all fields
+class Field:  # super for all base fields
 
     def __init__(self, value):
         self._value = None
@@ -140,11 +120,11 @@ class Birthday(Field):
         return f"{self.value.date()}"
 
 
-class Record():  # add remove change  field
+class Record():
 
     def __init__(self, name, *phones):
 
-        self.name = Name(name)  # .value
+        self.name = Name(name)
         self.phones = []
         self.birthday = None
         if phones:
@@ -173,7 +153,7 @@ class Record():  # add remove change  field
     def add_birthday(self, birthday):
 
         if not self.birthday:
-            self.birthday = Birthday(birthday)  # .value
+            self.birthday = Birthday(birthday)
             return (True,)
         else:
             return (False, f"Birthday already recorded for {self.name.value}. You can change it.")
@@ -183,18 +163,18 @@ class Record():  # add remove change  field
         if not self.birthday:
             return (False, f"Birthday not specified for {self.name.value}. You can add it.")
         else:
-            self.birthday = Birthday(birthday)  # .value
+            self.birthday = Birthday(birthday)
             return (True,)
 
     def add_phone(self, phone_new):
 
-        phone_new = Phone(phone_new)  # .value
+        phone_new = Phone(phone_new)
         for phone in self.phones:
             if phone_new == phone.value:
                 print(f"{phone_new} already recorded for {self.name.value}")
                 return False
 
-        self.phones.append(phone_new)  # (Phone(phone_new))
+        self.phones.append(phone_new)
         return True
 
     def remove_phone(self, phone_to_remove):
@@ -203,7 +183,7 @@ class Record():  # add remove change  field
         for phone in self.phones:
             if phone.value == phone_to_remove:
                 self.phones.remove(phone)
-                return True  # Is it correct instead of a break?
+                return True
 
     def change_phone(self, phone_to_change, phone_new):
 
@@ -225,44 +205,11 @@ class Record():  # add remove change  field
         for index, phone in enumerate(self.phones):
             if phone.value == phone_to_change:
                 self.phones.remove(phone)
-                self.phones.insert(index, Phone(phone_new))  # .value
-                return (True,)  # Is it correct instead of a break?
+                self.phones.insert(index, Phone(phone_new))
+                return (True,)
 
     def __str__(self):
         return f"Record(Name:{self.name}; Phones: {self.phones}; Birthday: {self.birthday})"
-
-
-# ------------------------------------------------------------3
-def gen_address_book(max_names: int) -> AddressBook:
-    """Simplest generator simplest AddressBook
-    incoming: max_names is quantity limit (int)
-    return: address_book - instance of the filled class AddressBook
-    """
-    address_book = AddressBook()
-    counter = 0
-    name = my_generator_names(max_names)
-    phone = my_generator_phones(max_names * 3)
-    while counter < max_names:
-        record = Record(next(name))
-        phones_quantity = random.choice([1, 2, 3, ])
-
-        while phones_quantity:
-            record.add_phone(next(phone))
-            phones_quantity -= 1
-
-        birthday_ = random.choice([0, 1, ])
-        if birthday_:
-            record.add_birthday(
-                str(random.randint(1922, 2005))+"-"+str(random.randint(1, 12))+"-"+str(random.randint(1, 28)))
-
-        address_book.add_record(record)
-        counter += 1
-
-    return address_book
-
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!5
-contact_dictionary = AddressBook()
 
 
 def validation_add(user_command, number_format, name):
@@ -483,7 +430,7 @@ def handler_add(user_command: list) -> str:
     incoming: list of user command (name of user)
     return: string"""
     name = user_command[1]
-    new_record = Record(name)  # Record(Name(name))  .value
+    new_record = Record(name)
     contact_dictionary.add_record(new_record)
     if len(user_command) > 2:
         phones = user_command[2:]
@@ -693,7 +640,6 @@ def parser(user_input: str) -> list:
     return words
 
 
-# ------------------------------------------------------------------------------7
 def address_book_saver() -> None:
     '''Save a class AddressBook to a file
     incoming: None
@@ -703,6 +649,9 @@ def address_book_saver() -> None:
 
     with open(new_path_file, "wb") as db_file:
         pickle.dump(contact_dictionary, db_file)
+
+
+contact_dictionary = None
 
 
 def main():
@@ -716,11 +665,8 @@ def main():
         with open(new_path_file, "rb") as fh:
             contact_dictionary = pickle.load(fh)
     else:
-        contact_dictionary = gen_address_book(100)
+        contact_dictionary = AddressBook()
         address_book_saver()
-    # load contact dict if it available:
-    # if not contact_dictionary:
-    #     contact_dictionary = helper_opener()[0]
 
     while True:
         user_command = input()

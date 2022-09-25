@@ -386,9 +386,11 @@ def input_error(handler):
         else:
             name = None
 
-        if handler.__name__ == "handler_showall":
+        if handler.__name__ == "handler_showall" or handler.__name__ == "handler_find":
             if not contact_dictionary:
                 return "No contact records available\n"
+            if handler.__name__ == "handler_find" and not name:
+                return "There is no search query\n"
 
         elif handler.__name__ == "handler_show":
             validation = validation_show(user_command)
@@ -541,18 +543,48 @@ def handler_showall(_=None) -> list:
     return all_list
 
 
-"""
-    all_list = "Entries in your contact book:"
-    for name in contact_dictionary:
-        if contact_dictionary[name].birthday:
-            all_list += f"\n\n{name}, birthday: {contact_dictionary[name].birthday} ({contact_dictionary[name].days_to_birthday()} days to next birthday. Will be {contact_dictionary[name].years_old()} years old)\n-> phone(s): "
-        else:
-            all_list += f"\n\n{name}, birthday: {contact_dictionary[name].birthday}\n-> phone(s): "
-        for phone in contact_dictionary[name].phones:
-            all_list += f"{phone.value}; "
+def find_users(search_strings, record):
+    """A simple function for to check if a record matches the search strings
+    incoming: search_strings (list) strimg(s) for searching
+    return: True or False, as a result of the search"""
+    name = f"{record.name}"
+    for search_string in search_strings:
+        if name.find(search_string) >= 0:
+            return True
+        if record.birthday:
+            birthday = f"{record.birthday}"
+            if birthday.find(search_string) >= 0:
+                return True
+        for phone in record.phones:
+            candidate = f"{phone.value}"
+            candidate = candidate.replace(
+                "-", "").replace("+", "").replace("(", "").replace(")", "")
+            if candidate.find(search_string.replace("-", "").replace("+", "").replace("(", "").replace(")", "")) >= 0:
+                return True
+    return False
 
-    return all_list
-"""
+
+@ input_error
+def handler_find(user_command: list) -> list:
+    """"Find ...". With this command, the bot outputs a list 
+    of users whose name or phone number matches the entered one or more(with an OR setting) string without space(" ").
+    incoming: user_command (list) strimg(s) for searching
+    return: list of string of found users"""
+
+    found_list = ["Entries found in your contact book:"]
+    for records in contact_dictionary.iterator(10):  # N_count from?
+        volume = ""
+        for record in records:
+            if find_users(user_command[1:], record):
+                if record.birthday:
+                    volume += f"\n\n{record.name}, birthday: {record.birthday} ({record.days_to_birthday()} days to next birthday. Will be {record.years_old()} years old)\n-> phone(s): "
+                else:
+                    volume += f"\n\n{record.name}, birthday: {record.birthday}\n-> phone(s): "
+                for phone in record.phones:
+                    volume += f"{phone.value}; "
+        found_list.append(volume)
+
+    return found_list
 
 
 @ input_error
@@ -626,7 +658,8 @@ def main_handler(user_command: list):
                    "exit": handler_exit,
                    "show": handler_show,
                    "addbirthday": handler_add_birthday,
-                   "changebirthday": handler_change_birthday, }
+                   "changebirthday": handler_change_birthday,
+                   "find": handler_find, }
 
     if all_command.get(user_command[0].lower(), "It is unclear") != "It is unclear":
         return all_command.get(user_command[0].lower())(user_command)
@@ -697,8 +730,9 @@ def main():
             print(bot_answer)
         else:
             for volume in bot_answer:
-                print(volume)
-                input("Press Enter for next Volume... ")
+                if volume:
+                    print(volume)
+                    input("Press Enter for next Volume... ")
         if bot_answer == "Good bye!":
             break
 

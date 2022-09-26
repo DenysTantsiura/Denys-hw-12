@@ -2,7 +2,7 @@
 Add the functionality of saving the address book to disk and restoring it from disk. 
 To do this, you can choose any data serialization/deserialization protocol that is convenient 
 for you and implement methods that will save all data to a file and load it from a file.
-File: "ABook.bdata"
+File: "ABook.data"
 
 Add the ability to search the contents of the contact book to the user, so that all 
 information about one or more users can be found by a few digits of the phone number 
@@ -22,9 +22,9 @@ import re
 
 
 def helper_try_open_file(path_file: str) -> str:
-    '''Checks if the database file exists and checks if the filename is free if not
+    """Checks if the database file exists and checks if the filename is free if not
     incoming: path_file is name of file
-    return: name of file'''
+    return: name of file"""
     if os.path.isdir(path_file):
         while os.path.isdir(path_file):
             path_file = "new_one_" + path_file
@@ -37,19 +37,19 @@ class AddressBook(UserDict):
     def add_record(self, record):
         self.data[record.name.value] = record
 
-    def iterator(self, N_count: int):
+    def iterator(self, n_count: int):
 
         current_value = 0
         dictionary_iterator = iter(self.data)
         while current_value < len(self.data):
             volume = []
-            for i in range(N_count):
+            for i in range(n_count):
                 try:
                     volume.append(self.data[next(dictionary_iterator)])
                 except StopIteration:
                     current_value = len(self.data)
             yield volume
-            current_value += N_count
+            current_value += n_count
 
     def __str__(self):
         return f"AddressBook(Records:{self.data})"
@@ -74,7 +74,7 @@ class Name(Field):
 
     @Field.value.setter
     def value(self, new_value):
-        if new_value[0] not in "_0123456789!@$%^&*()-+?<>~`|\/":
+        if new_value[0] not in "_0123456789!@$%^&*()-+?<>~`|\\/":
             self._value = new_value
         else:
             print("At the beginning there can be only a Latin letter")
@@ -92,7 +92,8 @@ class Phone(Field):
         else:
             print("Incorrect phone...")
 
-    def __preformating(self, value: str) -> str:
+    @staticmethod
+    def __preformating(value: str) -> str:
 
         value = value.replace("-", "")
         if value[3] != "(":
@@ -120,7 +121,7 @@ class Birthday(Field):
         return f"{self.value.date()}"
 
 
-class Record():
+class Record:
 
     def __init__(self, name, *phones):
 
@@ -154,17 +155,17 @@ class Record():
 
         if not self.birthday:
             self.birthday = Birthday(birthday)
-            return (True,)
+            return True,
         else:
-            return (False, f"Birthday already recorded for {self.name.value}. You can change it.")
+            return False, f"Birthday already recorded for {self.name.value}. You can change it."
 
     def change_birthday(self, birthday):
 
         if not self.birthday:
-            return (False, f"Birthday not specified for {self.name.value}. You can add it.")
+            return False, f"Birthday not specified for {self.name.value}. You can add it."
         else:
             self.birthday = Birthday(birthday)
-            return (True,)
+            return True,
 
     def add_phone(self, phone_new):
 
@@ -194,19 +195,19 @@ class Record():
         for phone in self.phones:
 
             if phone.value == phone_new:
-                return (False, f"{phone_new} already recorded for {self.name.value}")
+                return False, f"{phone_new} already recorded for {self.name.value}"
 
             if phone.value == phone_to_change:
                 verdict = True
 
         if not verdict:
-            return (verdict, f"{phone_to_change} not specified in the contact {self.name.value}")
+            return verdict, f"{phone_to_change} not specified in the contact {self.name.value}"
 
         for index, phone in enumerate(self.phones):
             if phone.value == phone_to_change:
                 self.phones.remove(phone)
                 self.phones.insert(index, Phone(phone_new))
-                return (True,)
+                return True,
 
     def __str__(self):
         return f"Record(Name:{self.name}; Phones: {self.phones}; Birthday: {self.birthday})"
@@ -229,7 +230,8 @@ def validation_add(user_command, number_format, name):
     if len(user_command) >= 2:
         for phone_candidate in user_command[2:]:
             if not re.search(number_format, phone_candidate):
-                return "The number(s) is invalid.\nThe number must be in the following format with 12 digits(d): +dd(ddd)ddd-dddd\n"
+                return "The number(s) is invalid.\nThe number must be in the following format with 12 digits(d): \
+                +dd(ddd)ddd-dddd\n"
 
 
 def validation_add_phone(user_command, number_format, name):
@@ -245,7 +247,8 @@ def validation_add_phone(user_command, number_format, name):
 
     for phone_candidate in user_command[2:]:
         if not re.search(number_format, phone_candidate):
-            return "The number(s) is invalid.\nThe number must be in the following format with 12 digits(d): +dd(ddd)ddd-dddd\n"
+            return "The number(s) is invalid.\nThe number must be in the following format with 12 digits(d):\
+             +dd(ddd)ddd-dddd\n"
 
 
 def validation_change(user_command, number_format, name):
@@ -263,10 +266,11 @@ def validation_change(user_command, number_format, name):
         return "The name can only begin with Latin characters!\n"
 
     if not re.search(number_format, user_command[2]):
-        return "The number(s) is invalid: contains invalid characters or incorrect length\nThe number must be in the following format with 12 digits(d): +dd(ddd)ddd-dddd\n"
+        return "The number(s) is invalid: contains invalid characters or incorrect length\n \
+        The number must be in the following format with 12 digits(d): +dd(ddd)ddd-dddd\n"
 
 
-def validation_phone(user_command, name):
+def validation_phone(_, name):
 
     if not contact_dictionary:
         return "No contact records available\n"
@@ -314,8 +318,8 @@ def validation_birthday(user_command, name):
         return "The year of birth is not correct!\n"
     else:
         try:
-            birthday_data = datetime.strptime(user_command[2], "%Y-%m-%d")
-        except Exception:
+            datetime.strptime(user_command[2], "%Y-%m-%d")
+        except ValueError:
             return "The calendar date is not possible!\n"
 
 
@@ -476,11 +480,12 @@ def handler_showall(_=None) -> list:
     return: list of string of all users"""
 
     all_list = ["Entries in your contact book:"]
-    for records in contact_dictionary.iterator(10):  # N_count from?
+    for records in contact_dictionary.iterator(10):  # n_count from?
         volume = ""
         for record in records:
             if record.birthday:
-                volume += f"\n\n{record.name}, birthday: {record.birthday} ({record.days_to_birthday()} days to next birthday. Will be {record.years_old()} years old)\n-> phone(s): "
+                volume += f"\n\n{record.name}, birthday: {record.birthday} ({record.days_to_birthday()} \
+                days to next birthday. Will be {record.years_old()} years old)\n-> phone(s): "
             else:
                 volume += f"\n\n{record.name}, birthday: {record.birthday}\n-> phone(s): "
             for phone in record.phones:
@@ -519,12 +524,13 @@ def handler_find(user_command: list) -> list:
     return: list of string of found users"""
 
     found_list = ["Entries found in your contact book:"]
-    for records in contact_dictionary.iterator(10):  # N_count from?
+    for records in contact_dictionary.iterator(10):  # n_count from?
         volume = ""
         for record in records:
             if find_users(user_command[1:], record):
                 if record.birthday:
-                    volume += f"\n\n{record.name}, birthday: {record.birthday} ({record.days_to_birthday()} days to next birthday. Will be {record.years_old()} years old)\n-> phone(s): "
+                    volume += f"\n\n{record.name}, birthday: {record.birthday} ({record.days_to_birthday()} \
+                    days to next birthday. Will be {record.years_old()} years old)\n-> phone(s): "
                 else:
                     volume += f"\n\n{record.name}, birthday: {record.birthday}\n-> phone(s): "
                 for phone in record.phones:
@@ -544,7 +550,9 @@ def handler_show(user_command: list) -> str:
 
     name = user_command[1]
     if contact_dictionary[name].birthday:
-        user_information = f"\n\n{name}, birthday: {contact_dictionary[name].birthday} ({contact_dictionary[name].days_to_birthday()} days to next birthday. Will be {contact_dictionary[name].years_old()} years old)\n-> phone(s): "
+        user_information = f"\n\n{name}, birthday: {contact_dictionary[name].birthday} \
+        ({contact_dictionary[name].days_to_birthday()} days to next birthday. \
+        Will be {contact_dictionary[name].years_old()} years old)\n-> phone(s): "
     else:
         user_information = f"\n\n{name}, birthday: {contact_dictionary[name].birthday}\n-> phone(s): "
     for phone in contact_dictionary[name].phones:
@@ -556,7 +564,7 @@ def handler_show(user_command: list) -> str:
 @ input_error
 def handler_add_birthday(user_command: list) -> str:
     """"add birthday...". With this command, the bot saves
-    a new information about user in memory (in the dictionary, for
+    new information about user in memory (in the dictionary, for
     example). Instead of ... the user enters the name
     and birthday (in format YYYY-MM-DD), necessarily with a space.
     incoming: list of user command (name of user and birthday)
@@ -641,17 +649,17 @@ def parser(user_input: str) -> list:
 
 
 def address_book_saver() -> None:
-    '''Save a class AddressBook to a file
+    """Save a class AddressBook to a file
     incoming: None
-    return: None'''
-    path_file = "ABook.bdata"
+    return: None"""
+    path_file = "ABook.data"
     new_path_file = helper_try_open_file(path_file)
 
     with open(new_path_file, "wb") as db_file:
         pickle.dump(contact_dictionary, db_file)
 
 
-contact_dictionary = None
+contact_dictionary = AddressBook()
 
 
 def main():
@@ -659,7 +667,7 @@ def main():
     ...
     """
     global contact_dictionary
-    path_file = "ABook.bdata"
+    path_file = "ABook.data"
     new_path_file = helper_try_open_file(path_file)
     if os.path.exists(new_path_file):
         with open(new_path_file, "rb") as fh:
